@@ -12,9 +12,13 @@ import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parent
 VECTORIZER_PATH = BASE_DIR / "vectorizer.joblib"
+# Expected model artifact filenames the user will drop in the development folder.
+# Support preferred names and a couple of legacy synonyms for convenience.
 MODEL_PATHS: Dict[str, Path] = {
-    "vector": BASE_DIR / "vector.joblib",
+    "svm": BASE_DIR / "svm.joblib",
     "ridge": BASE_DIR / "ridge.joblib",
+    "randomforest": BASE_DIR / "randomforest.joblib",
+    # Legacy synonyms (if present, they will be picked up too)
     "random_forest": BASE_DIR / "random_forest.joblib",
 }
 
@@ -38,18 +42,25 @@ def preprocess(text: str) -> str:
 
 
 def load_artifacts():
+    if not VECTORIZER_PATH.exists():
+        raise FileNotFoundError(
+            f"Missing vectorizer file: {VECTORIZER_PATH.name}. Place it in {BASE_DIR}."
+        )
+
     vectorizer = joblib.load(VECTORIZER_PATH)
+
     models: Dict[str, object] = {}
     for name, path in MODEL_PATHS.items():
-        models[name] = joblib.load(path)
+        if path.exists():
+            models[name] = joblib.load(path)
     return vectorizer, models
 
 
-def predict_rgb(text: str, vectorizer, models: Dict[str, object], model_type: str = "vector") -> Tuple[int, int, int]:
+def predict_rgb(text: str, vectorizer, models: Dict[str, object], model_type: str = "svm") -> Tuple[int, int, int]:
     prepped = preprocess(text)
     features = vectorizer.transform([prepped])
 
-    model_key = (model_type or "vector").lower()
+    model_key = (model_type or "svm").lower()
     if model_key not in models:
         raise ValueError(f"Unsupported model '{model_key}'")
 
@@ -79,7 +90,11 @@ def main():
         parser.error("Please provide a text prompt, e.g. python predict_color.py \"calm ocean\"")
 
     vectorizer, models = load_artifacts()
-    rgb = predict_rgb(user_text, vectorizer, models, "vector")
+    # Prefer SVM if available; otherwise use the first available model.
+    default_model = "svm" if "svm" in models else (next(iter(models)) if models else None)
+    if not default_model:
+        raise RuntimeError("No model artifacts found. Add svm.joblib, ridge.joblib, or randomforest.joblib to the development folder.")
+    rgb = predict_rgb(user_text, vectorizer, models, default_model)
     hex_code = to_hex(rgb)
 
     result = {"input": user_text, "rgb": rgb, "hex": hex_code}

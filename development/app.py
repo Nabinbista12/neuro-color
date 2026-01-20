@@ -24,14 +24,17 @@ except Exception as exc:  # noqa: BLE001
 def predict():
     data = request.get_json(silent=True) or {}
     text = str(data.get("text", "")).strip()
-    model_type = str(data.get("model", "vector")).strip().lower()
+    # Default to svm; if not available, fall back to first loaded model.
+    requested = str(data.get("model", "svm")).strip().lower()
     
     if not text:
         return jsonify({"error": "Missing 'text'"}), 400
     
     allowed_models = set(models.keys())
-    if model_type not in allowed_models:
-        return jsonify({"error": "Invalid model type"}), 400
+    if not allowed_models:
+        return jsonify({"error": "No models loaded. Add svm.joblib, ridge.joblib, or randomforest.joblib."}), 500
+
+    model_type = requested if requested in allowed_models else next(iter(allowed_models))
 
     try:
         if vectorizer is None or not models:
