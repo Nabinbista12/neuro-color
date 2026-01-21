@@ -1,7 +1,3 @@
-"""Minimal Flask server to expose the color predictor.
-Run with: python app.py
-Then open http://127.0.0.1:5000/ in your browser.
-"""
 from __future__ import annotations
 
 from pathlib import Path

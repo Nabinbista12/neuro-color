@@ -17,6 +17,7 @@ VECTORIZER_PATH = BASE_DIR / "vectorizer.joblib"
 MODEL_PATHS: Dict[str, Path] = {
     "svm": BASE_DIR / "svm.joblib",
     "ridge": BASE_DIR / "ridge.joblib",
+    "grid": BASE_DIR / "grid.joblib",
     "random_forest": BASE_DIR / "random_forest.joblib",
 }
 
@@ -76,6 +77,7 @@ def to_hex(rgb: Tuple[int, int, int]) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Predict an RGB color from a Moodx ")
     parser.add_argument("text", nargs=argparse.REMAINDER, help="Words describing the color.")
+    parser.add_argument("--model", type=str, default="svm", help="Model to use: svm, ridge, grid, or random_forest.")
     args = parser.parse_args()
 
     user_text = " ".join(args.text).strip()
@@ -88,11 +90,12 @@ def main():
         parser.error("Please provide a text prompt, e.g. python predict_color.py \"calm ocean\"")
 
     vectorizer, models = load_artifacts()
-    # Prefer SVM if available; otherwise use the first available model.
-    default_model = "svm" if "svm" in models else (next(iter(models)) if models else None)
-    if not default_model:
-        raise RuntimeError("No model artifacts found. Add svm.joblib, ridge.joblib, or randomforest.joblib to the development folder.")
-    rgb = predict_rgb(user_text, vectorizer, models, default_model)
+    # Use user-specified model or fall back to defaults
+    model_to_use = args.model.lower()
+    if model_to_use not in models:
+        available = ", ".join(models.keys()) if models else "none"
+        raise ValueError(f"Model '{model_to_use}' not found. Available models: {available}")
+    rgb = predict_rgb(user_text, vectorizer, models, model_to_use)
     hex_code = to_hex(rgb)
 
     result = {"input": user_text, "rgb": rgb, "hex": hex_code}
