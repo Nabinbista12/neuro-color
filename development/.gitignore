@@ -1,2 +1,0 @@
-# Ignore local model artifacts to avoid large files in git
-*.joblib

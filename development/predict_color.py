@@ -17,8 +17,6 @@ VECTORIZER_PATH = BASE_DIR / "vectorizer.joblib"
 MODEL_PATHS: Dict[str, Path] = {
     "svm": BASE_DIR / "svm.joblib",
     "ridge": BASE_DIR / "ridge.joblib",
-    "randomforest": BASE_DIR / "randomforest.joblib",
-    # Legacy synonyms (if present, they will be picked up too)
     "random_forest": BASE_DIR / "random_forest.joblib",
 }
 
@@ -76,7 +74,7 @@ def to_hex(rgb: Tuple[int, int, int]) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Predict an RGB color from a text prompt.")
+    parser = argparse.ArgumentParser(description="Predict an RGB color from a Moodx ")
     parser.add_argument("text", nargs=argparse.REMAINDER, help="Words describing the color.")
     args = parser.parse_args()
 
